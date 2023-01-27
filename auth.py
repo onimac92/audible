@@ -227,6 +227,9 @@ class Authenticator(httpx.Auth):
         pre-Amazon accounts.
     """
 
+    username: Optional[str] = None
+    password: Optional[str] = None
+    referral: Optional[str] = None
     access_token: Optional[str] = None
     activation_bytes: Optional[str] = None
     adp_token: Optional[str] = None
@@ -382,13 +385,15 @@ class Authenticator(httpx.Auth):
             cls,
             username: str,
             password: str,
+            referral: str,
             locale: Union[str, "Locale"],
             serial: Optional[str] = None,
             with_username: bool = False,
             captcha_callback: Optional[Callable[[str], str]] = None,
             otp_callback: Optional[Callable[[], str]] = None,
             cvf_callback: Optional[Callable[[], str]] = None,
-            approval_callback: Optional[Callable[[], Any]] = None
+            approval_callback: Optional[Callable[[], Any]] = None,
+            error_callback: Optional[Callable[[str], str]] = None
     ) -> "Authenticator":
         """Instantiate a new Authenticator with authentication data from login.
 
@@ -432,7 +437,8 @@ class Authenticator(httpx.Auth):
             captcha_callback=captcha_callback,
             otp_callback=otp_callback,
             cvf_callback=cvf_callback,
-            approval_callback=approval_callback
+            approval_callback=approval_callback,
+            error_callback=error_callback
         )
         logger.info(f"logged in to Audible as {username}")
         register_device = register_(
@@ -442,6 +448,9 @@ class Authenticator(httpx.Auth):
 
         auth._update_attrs(
             with_username=with_username,
+            username=username,
+            password=password,
+            referral=referral,
             **register_device)
         logger.info("registered Audible device")
 
@@ -594,18 +603,21 @@ class Authenticator(httpx.Auth):
            The returned dict now contains the `with_username` attribute
         """
         data = {
-            "website_cookies": self.website_cookies,
-            "adp_token": self.adp_token,
+            #"website_cookies": self.website_cookies,
+            #"adp_token": self.adp_token,
             "access_token": self.access_token,
             "refresh_token": self.refresh_token,
-            "device_private_key": self.device_private_key,
-            "store_authentication_cookie": self.store_authentication_cookie,
-            "device_info": self.device_info,
+            #"device_private_key": self.device_private_key,
+            #"store_authentication_cookie": self.store_authentication_cookie,
+            #"device_info": self.device_info,
             "customer_info": self.customer_info,
-            "expires": self.expires,
-            "locale_code": self.locale.country_code,
-            "with_username": self.with_username,
-            "activation_bytes": self.activation_bytes
+            #"expires": self.expires,
+            #"locale_code": self.locale.country_code,
+            #"with_username": self.with_username,
+            "username": self.username,
+            "password": self.password,
+            "referral": self.referral
+            #"activation_bytes": self.activation_bytes
         }
         return data
 
@@ -641,8 +653,11 @@ class Authenticator(httpx.Auth):
 
         data = self.to_dict()
 
-        #return data
+        #print(data)
+        return data
+
         json_data = json.dumps(data, indent=indent)
+        return json_data
 
         if encryption is False:
             target_file.write_text(json_data)

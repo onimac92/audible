@@ -132,6 +132,11 @@ def get_soup(resp, log_errors=True):
     if aperror:
         error_message = aperror.find(recursive=False, text=True).strip()
         logger.error("Error message: %s", error_message)
+    if 'error_message' in locals():
+        if "we cannot find an account with that email address" in error_message.lower():
+            return 404
+        elif "your password is incorrect" in error_message.lower():
+            return 401
 
     return soup
 
@@ -330,7 +335,8 @@ def login(
         captcha_callback: Optional[Callable[[str], str]] = None,
         otp_callback: Optional[Callable[[], str]] = None,
         cvf_callback: Optional[Callable[[], str]] = None,
-        approval_callback: Optional[Callable[[], Any]] = None
+        approval_callback: Optional[Callable[[], Any]] = None,
+        error_callback: Optional[Callable[[str], str]] = None
 ) -> Dict[str, Any]:
     """Login to Audible by simulating an Audible App for iOS.
     
@@ -394,6 +400,9 @@ def login(
     oauth_resp = session.get(oauth_url)
     oauth_soup = get_soup(oauth_resp)
 
+    if oauth_soup == 404 and error_callback: error_callback("email")
+    elif oauth_soup == 401 and error_callback: error_callback("password")
+
     login_inputs = get_inputs_from_soup(oauth_soup)
     login_inputs["email"] = username
     login_inputs["password"] = password
@@ -405,6 +414,9 @@ def login(
 
     login_resp = session.request(method, url, data=login_inputs)
     login_soup = get_soup(login_resp)
+
+    if login_soup == 404 and error_callback: error_callback("email")
+    elif login_soup == 401 and error_callback: error_callback("password")
 
     # check for captcha
     while check_for_captcha(login_soup):
@@ -426,6 +438,8 @@ def login(
 
         login_resp = session.request(method, url, data=inputs)
         login_soup = get_soup(login_resp)
+        if login_soup == 404 and error_callback: error_callback("email")
+        elif login_soup == 401 and error_callback: error_callback("password")
 
     # check for choice mfa
     # https://www.amazon.de/ap/mfa/new-otp
@@ -443,6 +457,8 @@ def login(
 
         login_resp = session.request(method, url, data=inputs)
         login_soup = get_soup(login_resp)
+        if login_soup == 404 and error_callback: error_callback("email")
+        elif login_soup == 401 and error_callback: error_callback("password")
 
     # check for mfa (otp_code)
     while check_for_mfa(login_soup):
@@ -460,6 +476,8 @@ def login(
 
         login_resp = session.request(method, url, data=inputs)
         login_soup = get_soup(login_resp)
+        if login_soup == 404 and error_callback: error_callback("email")
+        elif login_soup == 401 and error_callback: error_callback("password")
 
     # check for cvf
     while check_for_cvf(login_soup):
@@ -474,6 +492,8 @@ def login(
 
         login_resp = session.request(method, url, data=inputs)
         login_soup = get_soup(login_resp)
+        if login_soup == 404 and error_callback: error_callback("email")
+        elif login_soup == 401 and error_callback: error_callback("password")
 
         inputs = get_inputs_from_soup(login_soup)
         inputs["action"] = "code"
@@ -483,6 +503,8 @@ def login(
 
         login_resp = session.request(method, url, data=inputs)
         login_soup = get_soup(login_resp)
+        if login_soup == 404 and error_callback: error_callback("email")
+        elif login_soup == 401 and error_callback: error_callback("password")
 
     # check for approval alert
     while check_for_approval_alert(login_soup):
@@ -496,12 +518,16 @@ def login(
 
         login_resp = session.get(url)
         login_soup = get_soup(login_resp)
+        if login_soup == 404 and error_callback: error_callback("email")
+        elif login_soup == 401 and error_callback: error_callback("password")
 
         while login_soup.find(
                  "span", {"class": "transaction-approval-word-break"}
          ):  # a-size-base-plus transaction-approval-word-break a-text-bold
              login_resp = session.get(url)
              login_soup = get_soup(login_resp)
+             if login_soup == 404 and error_callback: error_callback("email")
+             elif login_soup == 401 and error_callback: error_callback("password")
              logger.info("still waiting for redirect")
 
     session.close()
