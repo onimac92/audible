@@ -390,7 +390,7 @@ class Authenticator(httpx.Auth):
             serial: Optional[str] = None,
             with_username: bool = False,
             captcha_callback: Optional[Callable[[str], str]] = None,
-            otp_callback: Optional[Callable[[], str]] = None,
+            otp_callback: Optional[Callable[[str], str]] = None,
             cvf_callback: Optional[Callable[[], str]] = None,
             approval_callback: Optional[Callable[[], Any]] = None,
             error_callback: Optional[Callable[[str], str]] = None

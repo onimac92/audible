@@ -333,7 +333,7 @@ def login(
         serial: Optional[str] = None,
         with_username: bool = False,
         captcha_callback: Optional[Callable[[str], str]] = None,
-        otp_callback: Optional[Callable[[], str]] = None,
+        otp_callback: Optional[Callable[[str], str]] = None,
         cvf_callback: Optional[Callable[[], str]] = None,
         approval_callback: Optional[Callable[[], Any]] = None,
         error_callback: Optional[Callable[[str], str]] = None
@@ -462,8 +462,16 @@ def login(
 
     # check for mfa (otp_code)
     while check_for_mfa(login_soup):
+        a = login_soup.select_one('p:-soup-contains("One Time Password")').text.strip().lower()
+        if "authenticator app" in a:
+            a = "authenticator"
+        elif "phone number" in a:
+            a = re.findall(r'\d+', a)[0]
+        else:
+            a = ""
+            
         if otp_callback:
-            otp_code = otp_callback()
+            otp_code = otp_callback(a)
         else:
             otp_code = default_otp_callback()
 
