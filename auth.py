@@ -392,7 +392,7 @@ class Authenticator(httpx.Auth):
             captcha_callback: Optional[Callable[[str], str]] = None,
             otp_callback: Optional[Callable[[str], str]] = None,
             cvf_callback: Optional[Callable[[], str]] = None,
-            approval_callback: Optional[Callable[[], Any]] = None,
+            approval_callback: Optional[Callable[[str], str]] = None,
             error_callback: Optional[Callable[[str], str]] = None
     ) -> "Authenticator":
         """Instantiate a new Authenticator with authentication data from login.

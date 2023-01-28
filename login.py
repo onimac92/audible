@@ -335,7 +335,7 @@ def login(
         captcha_callback: Optional[Callable[[str], str]] = None,
         otp_callback: Optional[Callable[[str], str]] = None,
         cvf_callback: Optional[Callable[[], str]] = None,
-        approval_callback: Optional[Callable[[], Any]] = None,
+        approval_callback: Optional[Callable[[str], str]] = None,
         error_callback: Optional[Callable[[str], str]] = None
 ) -> Dict[str, Any]:
     """Login to Audible by simulating an Audible App for iOS.
@@ -516,6 +516,17 @@ def login(
 
     # check for approval alert
     while check_for_approval_alert(login_soup):
+        """
+        a = login_soup.select_one('p:-soup-contains("One Time Password")').text.strip().lower()
+        if "authenticator app" in a:
+            a = "authenticator"
+        elif "phone number" in a:
+            a = re.findall(r'\d+', a)[0]
+        else:
+            a = ""
+        """
+        print(login_soup)
+
         if approval_callback:
             approval_callback()
         else:
