@@ -516,19 +516,18 @@ def login(
 
     # check for approval alert
     while check_for_approval_alert(login_soup):
-        """
-        a = login_soup.select_one('p:-soup-contains("One Time Password")').text.strip().lower()
-        if "authenticator app" in a:
-            a = "authenticator"
-        elif "phone number" in a:
-            a = re.findall(r'\d+', a)[0]
+        a = login_soup.select('#channelDetailsWithImprovedLayout .a-row:nth-child(1) .a-column')
+        if "email address" in a[0].text.strip().lower():
+            a = "email " + a[1].text.strip().lower()
+        elif "mobile number" in a[0].text.strip().lower():
+            a = "phone " + a[1].text.strip().lower()
+        elif "application" in a[0].text.strip().lower():
+            a = "application " + a[1].text.strip().lower()
         else:
             a = ""
-        """
-        print(login_soup)
 
         if approval_callback:
-            approval_callback()
+            approval_callback(a)
         else:
             default_approval_alert_callback()
 
